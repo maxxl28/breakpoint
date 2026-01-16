@@ -1,4 +1,4 @@
-const Post = ({ App }) => {
+const Post = ({ App, Issues, onSubmit }) => {
   
   return (
     <div>
@@ -12,15 +12,17 @@ const Post = ({ App }) => {
       <p>Github</p>
 
       <p>{App.github}</p>
-      <p>Issues</p>
-
+      <p>Issues</p>      
       <ul>
-        {App.issues.map(value => <li key={value.id}>{value.comment}</li>)}
+        {Issues.map(value => <li key={value}>{value}</li>)}
       </ul>
-      
-      <p>Submit an Issue</p>
-      <form>
-        <input />
+
+      <p>Submit an Issue:</p>
+      <form onSubmit={(event) => {
+        event.preventDefault()
+        onSubmit(event, App.id)
+      }}>
+        <input name="issue"/>
         <button type="submit">submit</button>
       </form>
     </div>

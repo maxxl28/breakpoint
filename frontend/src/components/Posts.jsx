@@ -1,10 +1,12 @@
 import Post from './Post.jsx'
 
-const Posts = ({ AppList }) => {
-  
+const Posts = ({ AppList, Issuelist, onSubmit }) => {
+
+
+
   return (
     <div>
-      {AppList.map(value => <Post key={value.id} App={value}/>)}
+      {AppList.map(value => <Post key={value.id} App={value} onSubmit={onSubmit} Issues={Issuelist.find(obj => obj.appId === value.id)?.issues || []}/>)}
     </div>
   )
 }
