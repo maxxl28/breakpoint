@@ -1,5 +1,10 @@
-{
-  "apps": [
+const express = require('express')
+const app = express()
+
+const cors = require('cors')
+app.use(cors())
+
+let apps = [
     {
       "id": 1,
       "name": "App One",
@@ -40,8 +45,9 @@
       "github": "github.com",
       "email": "ma@a"
     }
-  ],
-  "issues": [
+  ]
+
+let issues = [
     {
       "id": 1,
       "appId": 1,
@@ -63,4 +69,51 @@
       "comment": "Hi"
     }
   ]
+
+// logs requests to console (from fullstackopen course)
+const requestLogger = (request, response, next) => {
+  console.log('Method:', request.method)
+  console.log('Path:  ', request.path)
+  console.log('Body:  ', request.body)
+  console.log('---')
+  next()
 }
+app.use(requestLogger)
+app.use(express.json())
+
+// get all issues
+app.get('/api/issues', (request, response) => {
+  response.json(issues)
+})
+
+// get all apps
+app.get('/api/apps', (request, response) => {
+  response.json(apps)
+})
+
+// get app by id
+app.get('/api/apps/:id', (request, response) => {
+  const id = request.params.id
+  const app = apps.find(app => app.id == id)
+  response.json(app)
+})
+
+// post app
+app.post('/api/apps', (request, response) => {
+  const app = request.body
+  const newApp = { ...app, id: Math.floor(Math.random() * 10000) }
+  apps = apps.concat(newApp)
+  response.json(newApp)
+})
+
+// postIssue
+app.post('/api/issues', (request, response) => {
+  const issue = request.body
+  const newIssue = { ...issue, id: Math.floor(Math.random() * 10000) }
+  issues = issues.concat(newIssue)
+  response.json(newIssue)
+})
+const PORT = 3001
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
+})
