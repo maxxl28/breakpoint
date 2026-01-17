@@ -14,7 +14,7 @@ const Post = ({ App, Issues, onSubmit }) => {
       <p>{App.github}</p>
       <p>Issues</p>      
       <ul>
-        {Issues.map(value => <li key={value}>{value}</li>)}
+        {Issues.map(value => <li key={value.id}>{value.comment}</li>)}
       </ul>
 
       <p>Submit an Issue:</p>

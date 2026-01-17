@@ -1,16 +1,35 @@
 import Posts from './components/Posts'
 import SubmissionPortal from './components/SubmissionPortal'
 import { useState, useEffect } from 'react'
+import postService from './services/posts'
 
+// APP ID NEEDS TO BE A NUMBER
 
 const App = () => {
   const [apps, setApps] = useState([])
   const [TotalIssues, setTotalIssues] = useState([])  
+  
+  useEffect(() => {
+    postService
+      .getAllApps()
+      .then(response => {
+        console.log("tried to get apps")
+        setApps(response)
+      })
+    postService
+      .getAllIssues()
+      .then(response => {
+        console.log("tried to get issues")
+        console.log(JSON.stringify(response, null, 2))
+        setTotalIssues(response)
+      })
+  }, [])
 
   const addApp = (event) => {
     console.log("app has been attempted to be added")
     event.preventDefault()
-    const id = Math.floor(Math.random() * 1000) + 1
+    
+    const id = Math.floor(Math.random() * 1000) + 1 // when you have backend already delete id
     const name = event.target.elements.name.value
     const description = event.target.elements.description.value
     const github = event.target.elements.github.value
@@ -24,8 +43,16 @@ const App = () => {
       github: github,
       email: email
     }
+    postService
+      .postApp(newApp)
+      .then(response => {
+        const newApps = apps.concat(response)
+        setApps(newApps)
+      })
+    /*
     const newApps = apps.concat(newApp)
-    setApps(newApps)
+    setApps(newApps)*/
+    
     event.target.reset()
   }
 
@@ -33,27 +60,17 @@ const App = () => {
     event.preventDefault()
     console.log("issue has attempted to be logged")
     console.log(event.target.elements.issue.value)
-    const newComment = event.target.elements.issue.value
-    // check if the app already has issues
-    if (TotalIssues.some(issue => issue.appId === appId)) {
-      const newTotalIssues = TotalIssues.map(issue => 
-        issue.appId===appId
-          ? { ...issue, issues: issue.issues.concat(newComment) }
-          : issue)
-        setTotalIssues(newTotalIssues)
-    } 
-    // app has no issues yet, this would be the first issue
-    else {
-      const newAppIssue = {
-        appId: appId,
-        issues: [
-          newComment
-        ]
-      }
-      const newTotalIssues = TotalIssues.concat(newAppIssue)
-      setTotalIssues(newTotalIssues)
-    }
-
+    const newIssue = {
+      appId: appId,
+      comment: event.target.elements.issue.value
+    }  
+    postService
+      .postIssue(newIssue)
+      .then(response => {
+        const newIssues = TotalIssues.concat(response)
+        setTotalIssues(newIssues)
+      })
+    event.target.reset()
   }
 
   return (
