@@ -1,74 +1,15 @@
+require('dotenv').config()
+const mongoose = require('mongoose')
 const express = require('express')
 const app = express()
-
 const cors = require('cors')
-app.use(cors())
+const url = process.env.MONGO_URI
+mongoose.set('strictQuery', false)
+mongoose.connect(url, { family: 4 })
 
-let apps = [
-    {
-      "id": 1,
-      "name": "App One",
-      "description": "First test app",
-      "deployment": "https://appone.com",
-      "github": "https://github.com/user/appone",
-      "email": "appone@example.com"
-    },
-    {
-      "id": 2,
-      "name": "App Two",
-      "description": "Second test app",
-      "deployment": "https://apptwo.com",
-      "github": "https://github.com/user/apptwo",
-      "email": "apptwo@example.com"
-    },
-    {
-      "id": 58,
-      "name": "Cs10",
-      "description": "A place to do.",
-      "deployment": "https://a12.com",
-      "github": "github.com",
-      "email": "person@com"
-    },
-    {
-      "id": 622,
-      "name": "Arsenal",
-      "description": "second place",
-      "deployment": "arsenal.com",
-      "github": "github.com/arsenal",
-      "email": "arsenal@goon.com"
-    },
-    {
-      "id": 69,
-      "name": "App12",
-      "description": "A great computer",
-      "deployment": "google.com",
-      "github": "github.com",
-      "email": "ma@a"
-    }
-  ]
+const AppModel = require('./models/app')
+const IssueModel = require('./models/issue')
 
-let issues = [
-    {
-      "id": 1,
-      "appId": 1,
-      "comment": "Login button not working"
-    },
-    {
-      "id": 2,
-      "appId": 1,
-      "comment": "UI breaks on mobile"
-    },
-    {
-      "id": 3,
-      "appId": 2,
-      "comment": "Deployment link is down"
-    },
-    {
-      "id": "8a17",
-      "appId": 1,
-      "comment": "Hi"
-    }
-  ]
 
 // logs requests to console (from fullstackopen course)
 const requestLogger = (request, response, next) => {
@@ -78,41 +19,61 @@ const requestLogger = (request, response, next) => {
   console.log('---')
   next()
 }
+app.use(cors())
 app.use(requestLogger)
 app.use(express.json())
 
 // get all issues
 app.get('/api/issues', (request, response) => {
-  response.json(issues)
+  IssueModel.find({}).then(result => {
+      response.json(result)
+    })
 })
+  
 
 // get all apps
 app.get('/api/apps', (request, response) => {
-  response.json(apps)
+  AppModel.find({}).then(result => {
+    response.json(result)
+  })
 })
 
 // get app by id
 app.get('/api/apps/:id', (request, response) => {
   const id = request.params.id
-  const app = apps.find(app => app.id == id)
-  response.json(app)
+  AppModel.findById(id).then(note => {
+    response.json(note)
+  })
 })
+
 
 // post app
 app.post('/api/apps', (request, response) => {
-  const app = request.body
-  const newApp = { ...app, id: Math.floor(Math.random() * 10000) }
-  apps = apps.concat(newApp)
-  response.json(newApp)
+  const body = request.body
+  const app = new AppModel({
+    name: body.name,
+    description: body.description,
+    deployment: body.deployment,
+    github: body.github,
+    email: body.email
+  })
+  app.save().then((savedApp) => {
+    response.json(savedApp)
+  })
 })
 
 // postIssue
 app.post('/api/issues', (request, response) => {
-  const issue = request.body
-  const newIssue = { ...issue, id: Math.floor(Math.random() * 10000) }
-  issues = issues.concat(newIssue)
-  response.json(newIssue)
+  const body= request.body
+  const issue = new IssueModel({
+    appId: body.appId,
+    comment: body.comment
+  })
+  issue.save().then((savedIssue) => {
+    response.json(savedIssue)
+  })
 })
+
 const PORT = 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
