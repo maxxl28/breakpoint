@@ -1,4 +1,5 @@
 require('dotenv').config()
+const { MailerSend, EmailParams, Sender, Recipient } = require("mailersend")
 const mongoose = require('mongoose')
 const express = require('express')
 const app = express()
@@ -41,8 +42,8 @@ app.get('/api/apps', (request, response) => {
 // get app by id
 app.get('/api/apps/:id', (request, response) => {
   const id = request.params.id
-  AppModel.findById(id).then(note => {
-    response.json(note)
+  AppModel.findById(id).then(app => {
+    response.json(app)
   })
 })
 
@@ -70,7 +71,29 @@ app.post('/api/issues', (request, response) => {
     comment: body.comment
   })
   issue.save().then((savedIssue) => {
-    response.json(savedIssue)
+    AppModel.findById(body.appId).then(app => {
+      // from official documentation
+      const mailerSend = new MailerSend({
+        apiKey: process.env.MAILERSEND_API_KEY
+      })
+      const sentFrom = new Sender("noreply@test-51ndgwvy7drlzqx8.mlsender.net", "breakpoint")
+      const recipients = [
+        new Recipient(app.email, "Developer")
+      ]
+      const emailParams = new EmailParams()
+      .setFrom(sentFrom)
+      .setTo(recipients)
+      .setReplyTo(sentFrom)
+      .setSubject("Subject: new issue")
+      .setText("Someone posted a new issue!")
+
+      mailerSend.email.send(emailParams).then(app => {
+        console.log("I RAN AND EMAIL ALERT SENT")
+        response.json(savedIssue)
+      }
+      )
+    })
+
   })
 })
 

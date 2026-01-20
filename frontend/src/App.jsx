@@ -3,7 +3,6 @@ import SubmissionPortal from './components/SubmissionPortal'
 import { useState, useEffect } from 'react'
 import postService from './services/posts'
 
-// APP ID NEEDS TO BE A NUMBER
 
 const App = () => {
   const [apps, setApps] = useState([])
@@ -29,14 +28,12 @@ const App = () => {
     console.log("app has been attempted to be added")
     event.preventDefault()
     
-    const id = Math.floor(Math.random() * 1000) + 1 // when you have backend already delete id
     const name = event.target.elements.name.value
     const description = event.target.elements.description.value
     const github = event.target.elements.github.value
     const deployment = event.target.elements.deployment.value
     const email = event.target.elements.email.value
     const newApp = {
-      id: id,
       name: name,
       description: description,
       deployment: deployment,
@@ -49,9 +46,6 @@ const App = () => {
         const newApps = apps.concat(response)
         setApps(newApps)
       })
-    /*
-    const newApps = apps.concat(newApp)
-    setApps(newApps)*/
     
     event.target.reset()
   }
