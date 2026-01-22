@@ -1,15 +1,19 @@
 require('dotenv').config()
 const { MailerSend, EmailParams, Sender, Recipient } = require("mailersend")
+const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
+const crypto = require('crypto')
 const express = require('express')
 const app = express()
 const cors = require('cors')
+const bcrypt = require('bcrypt')
 const url = process.env.MONGO_URI
 mongoose.set('strictQuery', false)
 mongoose.connect(url, { family: 4 })
 
 const AppModel = require('./models/app')
 const IssueModel = require('./models/issue')
+const UserModel = require('./models/user')
 
 
 // logs requests to console (from fullstackopen course)
@@ -51,14 +55,14 @@ app.get('/api/apps/:id', (request, response) => {
 // post app
 app.post('/api/apps', (request, response) => {
   const body = request.body
-  const app = new AppModel({
+  const newApp = new AppModel({
     name: body.name,
     description: body.description,
     deployment: body.deployment,
     github: body.github,
     email: body.email
   })
-  app.save().then((savedApp) => {
+  newApp.save().then((savedApp) => {
     response.json(savedApp)
   })
 })
@@ -96,6 +100,99 @@ app.post('/api/issues', (request, response) => {
 
   })
 })
+
+
+// postUser
+app.post('/api/register', async (request, response) => {  
+  const body = request.body
+  const name = body.name
+  const email = body.email
+  const password = body.password
+  const userExists = await UserModel.findOne({email: email})  
+  
+  if (userExists) {
+    return response.status(400).json({error: "user already exists"})
+  }
+
+  /* left out for testing purposes
+  if (!email.endsWith("@dartmouth.edu")) {
+    return response.status(400).json({error: "need dartmouth edu email"})
+  }
+  */
+  const saltRounds = 10
+  const passwordHash = await bcrypt.hash(password, saltRounds)
+  const verificationToken = crypto.randomBytes(4).toString('hex')
+  const user = new UserModel({
+    name: name,
+    email: email,
+    passwordHash: passwordHash,
+    verified: false,
+    verificationToken: verificationToken,
+  })
+  user.save().then(user => {
+    const mailerSend = new MailerSend({
+        apiKey: process.env.MAILERSEND_API_KEY
+      })
+    const sentFrom = new Sender("noreply@test-51ndgwvy7drlzqx8.mlsender.net", "breakpoint")
+    const recipients = [
+      new Recipient(email, "Developer")
+    ]
+    const emailParams = new EmailParams()
+    .setFrom(sentFrom)
+    .setTo(recipients)
+    .setReplyTo(sentFrom)
+    .setSubject("Subject: new token")
+    .setText(`Your verification code is ${verificationToken}`)
+
+    mailerSend.email.send(emailParams).then(email => {
+      console.log("I RAN AND EMAIL ALERT SENT")
+      response.json(email)
+    })
+  })
+})
+  
+app.post('/api/verify', async (request, response) => {
+  const body = request.body  
+  const token = body.token
+  const user = await UserModel.findOne({ verificationToken: token })
+  if (!user) {
+    return response.status(400).json({ error: 'Invalid verification token' })
+  }
+  if (user.verified) {
+    return response.status(400).json({ error: 'User already verified' })
+  }
+  user.verified = true
+  user.verificationToken = null 
+  await user.save()
+  response.json({ message: 'Account verified'})
+})
+
+app.post('/api/login', async (request, response) => {
+  const body = request.body
+  const email = body.email
+  const user = await UserModel.findOne({ email: email})
+  if (!user || !user.verified) {
+    return response.status(400).json({ error: 'Invalid user'})
+  }
+  const password = body.password
+  const passwordCorrect = await bcrypt.compare(password, user.passwordHash)
+  
+  if (!passwordCorrect) {
+    return response.status(400).json({ error: 'Invalid credentials' })
+  }
+  const userForToken = {
+    email: user.email,
+    id: user._id
+  }
+  const token = jwt.sign(userForToken, process.env.JWT_SECRET, { expiresIn: '7d' })
+
+  response.json({ 
+    token: token,
+    email: user.email,
+    name: user.name
+  })
+})
+
 
 const PORT = 3001
 app.listen(PORT, () => {

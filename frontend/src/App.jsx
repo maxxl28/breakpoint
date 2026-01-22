@@ -2,13 +2,25 @@ import Posts from './components/Posts'
 import SubmissionPortal from './components/SubmissionPortal'
 import { useState, useEffect } from 'react'
 import postService from './services/posts'
-
+import authService from './services/auth'
+import Register from './components/Register'
+import Login from './components/Login'
+import Verify from './components/Verify'
 
 const App = () => {
   const [apps, setApps] = useState([])
   const [TotalIssues, setTotalIssues] = useState([])  
+  const [user, setUser] = useState(null) // ignore this for now
+  const [view, setView] = useState('register')
   
+
   useEffect(() => {
+    const loggedUserJSON = window.localStorage.getItem('breakpointUser')
+    if (loggedUserJSON) {
+      const user = JSON.parse(loggedUserJSON)
+      setUser(user)
+      setView('full_view')
+    }
     postService
       .getAllApps()
       .then(response => {
@@ -66,6 +78,69 @@ const App = () => {
       })
     event.target.reset()
   }
+
+  const registerUser = (event) => {
+    event.preventDefault()
+    const name = event.target.elements.name.value
+    const email = event.target.elements.email.value
+    const password = event.target.elements.password.value
+    const newUser = {
+      name: name,
+      email: email,
+      password: password,
+    }
+    authService
+      .postRegistration(newUser)
+      .then(response => {
+        setView('verify')
+      })
+    event.target.reset()
+  }
+
+  const verifyUser = (event) => {
+    event.preventDefault()
+    const token = event.target.elements.token.value
+    const payload = {
+      token: token
+    }
+    authService
+      .postVerification(payload)
+      .then(response => {
+        setView('full_view')
+      })
+  }
+
+  const loginUser = (event) => {
+    event.preventDefault()
+    const email = event.target.elements.email.value
+    const password = event.target.elements.password.value
+    const user = {
+      email: email,
+      password: password
+    }
+    authService
+      .postLogin(user)
+      .then(response => {
+        setView('full_view')
+        const jwttoken = response.token
+        window.localStorage.setItem('breakpointToken', response.token)
+        window.localStorage.setItem('breakpointUser', JSON.stringify(response))
+        setUser(response)
+      })
+  }
+
+  if (view == 'register') {
+    return <Register onSubmit={registerUser} setView={setView}/>
+  }
+
+  if (view == 'verify') {
+    return <Verify onSubmit={verifyUser} />
+  }
+
+  if (view == 'login') {
+    return <Login onSubmit={loginUser} />
+  }
+
 
   return (
     <div>
