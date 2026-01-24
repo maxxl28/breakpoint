@@ -15,7 +15,6 @@ const AppModel = require('./models/app')
 const IssueModel = require('./models/issue')
 const UserModel = require('./models/user')
 
-
 // logs requests to console (from fullstackopen course)
 const requestLogger = (request, response, next) => {
   console.log('Method:', request.method)

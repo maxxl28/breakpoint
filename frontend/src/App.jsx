@@ -92,7 +92,11 @@ const App = () => {
     authService
       .postRegistration(newUser)
       .then(response => {
+        alert('Registration successful! Check your email for verification code.')
         setView('verify')
+      })
+      .catch(error => {
+        alert('User already exists!')
       })
     event.target.reset()
   }
@@ -106,7 +110,11 @@ const App = () => {
     authService
       .postVerification(payload)
       .then(response => {
-        setView('full_view')
+        setView('login')
+      })
+      .catch(error => {
+        const errorMessage = error.response.data.error
+        alert(errorMessage)
       })
   }
 
@@ -126,6 +134,10 @@ const App = () => {
         window.localStorage.setItem('breakpointToken', response.token)
         window.localStorage.setItem('breakpointUser', JSON.stringify(response))
         setUser(response)
+      })
+      .catch(error => {
+        const errorMessage = error.response.data.error
+        alert(errorMessage)
       })
   }
 
