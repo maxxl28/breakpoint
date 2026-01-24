@@ -17,12 +17,20 @@ const getApp = (id) => {
 }
 
 const postApp = newObject => {
-  const request = axios.post(`${baseUrl}/apps`, newObject)
+  const user = JSON.parse(localStorage.getItem('breakpointUser'))
+  const config = {
+    headers: { Authorization: `Bearer ${user.token}` }
+  }
+  const request = axios.post(`${baseUrl}/apps`, newObject, config)
   return request.then(response => response.data)
 }
 
 const postIssue = newObject => {
-  const request = axios.post(`${baseUrl}/issues`, newObject)
+  const user = JSON.parse(localStorage.getItem('breakpointUser'))
+  const config = {
+    headers: { Authorization: `Bearer ${user.token}` }
+  }
+  const request = axios.post(`${baseUrl}/issues`, newObject, config)
   return request.then(response => response.data)
 }
 

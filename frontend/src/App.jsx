@@ -96,7 +96,8 @@ const App = () => {
         setView('verify')
       })
       .catch(error => {
-        alert('User already exists!')
+        const errorMessage = error.response.data.error
+        alert(errorMessage)
       })
     event.target.reset()
   }

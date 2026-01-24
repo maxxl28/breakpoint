@@ -23,18 +23,42 @@ const requestLogger = (request, response, next) => {
   console.log('---')
   next()
 }
+
+const getTokenFrom = request => {
+  const authorization = request.get('authorization')
+  if (authorization && authorization.startsWith('Bearer ')) {
+    return authorization.replace('Bearer ', '')
+  }
+  return null
+}
+
+const authenticateToken = (request, response, next) => {
+  const token = getTokenFrom(request)
+  if (!token) {
+    return response.status(401).json({ error: 'Token missing' })
+  }
+  try {
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET)
+    request.user = decodedToken  
+    next()
+  } catch (error) {
+    return response.status(401).json({ error: 'Invalid token' })
+  }
+}
+
+
 app.use(cors())
 app.use(requestLogger)
 app.use(express.json())
 
+
 // get all issues
 app.get('/api/issues', (request, response) => {
   IssueModel.find({}).then(result => {
-      response.json(result)
-    })
+    response.json(result)
+  })
 })
   
-
 // get all apps
 app.get('/api/apps', (request, response) => {
   AppModel.find({}).then(result => {
@@ -50,9 +74,9 @@ app.get('/api/apps/:id', (request, response) => {
   })
 })
 
-
 // post app
-app.post('/api/apps', (request, response) => {
+app.post('/api/apps', authenticateToken, (request, response) => {
+  
   const body = request.body
   const newApp = new AppModel({
     name: body.name,
@@ -67,7 +91,7 @@ app.post('/api/apps', (request, response) => {
 })
 
 // postIssue
-app.post('/api/issues', (request, response) => {
+app.post('/api/issues', authenticateToken, (request, response) => {
   const body= request.body
   const issue = new IssueModel({
     appId: body.appId,
