@@ -12,6 +12,7 @@ const App = () => {
   const [TotalIssues, setTotalIssues] = useState([])  
   const [user, setUser] = useState(null) // ignore this for now
   const [view, setView] = useState('register')
+  const [search, setSearch] = useState('')
   
 
   useEffect(() => {
@@ -29,6 +30,10 @@ const App = () => {
         setTotalIssues(response)
       })
   }, [view])
+
+  const handleSearchChange = (event) => {
+    setSearch(event.target.value)
+  }
 
   const addApp = (event) => {
     console.log("app has been attempted to be added")
@@ -186,7 +191,13 @@ const App = () => {
   return (
     <div>
       <h1>dartmouth breakpoint</h1>
-      <Posts AppList={apps} Issuelist={TotalIssues} onSubmit={addIssue} onResolve={resolveIssue}/>
+      <div>
+        <p>search:</p>
+        <input onChange={handleSearchChange} value={search}/>
+      </div>
+      <h1>all apps:</h1>
+      <Posts AppList={apps.filter(app => app.name.toLowerCase().includes(search.toLowerCase()))} 
+        Issuelist={TotalIssues} onSubmit={addIssue} onResolve={resolveIssue}/>
       <SubmissionPortal onSubmit={addApp}/>
       <button onClick={logoutUser}>logout</button>
     </div>
