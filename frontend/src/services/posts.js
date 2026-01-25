@@ -27,12 +27,17 @@ const postApp = newObject => {
 
 const postIssue = newObject => {
   const user = JSON.parse(localStorage.getItem('breakpointUser'))
+  console.log("i run!")
   const config = {
     headers: { Authorization: `Bearer ${user.token}` }
   }
   const request = axios.post(`${baseUrl}/issues`, newObject, config)
+  console.log("testing")
+  console.log(newObject)
+  console.log(config)
   return request.then(response => response.data)
 }
+
 
 
 export default {

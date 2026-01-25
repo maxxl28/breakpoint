@@ -14,9 +14,10 @@ const SubmissionPortal = ({ onSubmit }) => {
 
         <p>Github</p>
         <input name="github" type="text" placeholder="Enter GitHub repo URL" required/>
-
+        {/*
         <p>Email for contact</p>
         <input name="email" type="email" placeholder="Enter email" required/>
+        */}
         <div>
           <button type="submit">Submit</button>
         </div>

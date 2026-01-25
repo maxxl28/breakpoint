@@ -32,24 +32,31 @@ const getTokenFrom = request => {
   return null
 }
 
-const authenticateToken = (request, response, next) => {
+const authenticateToken = async (request, response, next) => {
   const token = getTokenFrom(request)
   if (!token) {
     return response.status(401).json({ error: 'Token missing' })
   }
+
   try {
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET)
-    request.user = decodedToken  
+
+    const user = await UserModel.findById(decodedToken.id)
+    if (!user) {
+      return response.status(401).json({ error: 'User no longer exists' })
+    }
+
+    request.user = user
     next()
   } catch (error) {
     return response.status(401).json({ error: 'Invalid token' })
   }
 }
 
-
 app.use(cors())
-app.use(requestLogger)
 app.use(express.json())
+app.use(requestLogger)
+
 
 
 // get all issues
@@ -92,38 +99,56 @@ app.post('/api/apps', authenticateToken, (request, response) => {
 
 // postIssue
 app.post('/api/issues', authenticateToken, (request, response) => {
-  const body= request.body
+  const body = request.body
   const issue = new IssueModel({
     appId: body.appId,
     comment: body.comment
   })
-  issue.save().then((savedIssue) => {
-    AppModel.findById(body.appId).then(app => {
-      // from official documentation
-      const mailerSend = new MailerSend({
-        apiKey: process.env.MAILERSEND_API_KEY
-      })
-      const sentFrom = new Sender("noreply@test-51ndgwvy7drlzqx8.mlsender.net", "breakpoint")
-      const recipients = [
-        new Recipient(app.email, "Developer")
-      ]
-      const emailParams = new EmailParams()
-      .setFrom(sentFrom)
-      .setTo(recipients)
-      .setReplyTo(sentFrom)
-      .setSubject("Subject: new issue")
-      .setText("Someone posted a new issue!")
+  console.log(issue)
+  issue.save()
+    .then((savedIssue) => {
+      console.log("ISSUE SAVED TO DATABASE")
+      console.log("ASFASF")
+      AppModel.findById(body.appId)
+        .then(app => {
+          console.log("APP FOUND, SENDING EMAIL")
+          console.log(app.email)
+          const mailerSend = new MailerSend({
+            apiKey: process.env.MAILERSEND_API_KEY
+          })
+          const sentFrom = new Sender("noreply@test-q3enl6k0ndm42vwr.mlsender.net", "breakpoint")
+          const recipients = [new Recipient(app.email, "Developer")]
+          
+          const emailParams = new EmailParams()
+            .setFrom(sentFrom)
+            .setTo(recipients)
+            .setReplyTo(sentFrom)
+            .setSubject("Subject: new issue")
+            .setText("Someone posted a new issue!")
 
-      mailerSend.email.send(emailParams).then(app => {
-        console.log("I RAN AND EMAIL ALERT SENT")
-        response.json(savedIssue)
-      }
-      )
+          mailerSend.email.send(emailParams)
+            .then(() => {
+              console.log("EMAIL SENT SUCCESSFULLY")
+              response.json(savedIssue)
+            })
+            .catch(emailError => {
+              console.log("EMAIL SEND FAILED")
+              console.error(emailError)
+              response.json(savedIssue)
+            })
+        })
+        .catch(appError => {
+          console.log("APP NOT FOUND")
+          console.error(appError)
+          response.status(404).json({ error: 'App not found' })
+        })
     })
-
-  })
+    .catch(saveError => {
+      console.log("ISSUE SAVE FAILED")
+      console.error(saveError)
+      response.status(500).json({ error: 'Failed to save issue' })
+    })
 })
-
 
 // postUser
 app.post('/api/register', async (request, response) => {  
@@ -152,11 +177,12 @@ app.post('/api/register', async (request, response) => {
     verified: false,
     verificationToken: verificationToken,
   })
+  console.log("NEW USER HAS BEEN CREATED, SENDING TO MONGO DB...")
   user.save().then(user => {
     const mailerSend = new MailerSend({
         apiKey: process.env.MAILERSEND_API_KEY
       })
-    const sentFrom = new Sender("noreply@test-51ndgwvy7drlzqx8.mlsender.net", "breakpoint")
+    const sentFrom = new Sender("noreply@test-q3enl6k0ndm42vwr.mlsender.net", "breakpoint")
     const recipients = [
       new Recipient(email, "Developer")
     ]
@@ -171,6 +197,12 @@ app.post('/api/register', async (request, response) => {
       console.log("I RAN AND EMAIL ALERT SENT")
       response.json(email)
     })
+    .catch(error => {
+      response.status(500).json({error: error})
+    })
+  })
+  .catch(error => {
+    response.status(500).json({error: error})
   })
 })
   

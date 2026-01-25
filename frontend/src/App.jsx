@@ -15,12 +15,6 @@ const App = () => {
   
 
   useEffect(() => {
-    const loggedUserJSON = window.localStorage.getItem('breakpointUser')
-    if (loggedUserJSON) {
-      const user = JSON.parse(loggedUserJSON)
-      setUser(user)
-      setView('full_view')
-    }
     postService
       .getAllApps()
       .then(response => {
@@ -34,17 +28,18 @@ const App = () => {
         console.log(JSON.stringify(response, null, 2))
         setTotalIssues(response)
       })
-  }, [])
+  }, [view])
 
   const addApp = (event) => {
     console.log("app has been attempted to be added")
     event.preventDefault()
-    
     const name = event.target.elements.name.value
     const description = event.target.elements.description.value
     const github = event.target.elements.github.value
     const deployment = event.target.elements.deployment.value
-    const email = event.target.elements.email.value
+    const loggedUserJSON = window.localStorage.getItem('breakpointUser')
+    const user = JSON.parse(loggedUserJSON)  // ← Parse it first
+    const email = user.email
     const newApp = {
       name: name,
       description: description,
@@ -131,7 +126,6 @@ const App = () => {
       .postLogin(user)
       .then(response => {
         setView('full_view')
-        const jwttoken = response.token
         window.localStorage.setItem('breakpointToken', response.token)
         window.localStorage.setItem('breakpointUser', JSON.stringify(response))
         setUser(response)
@@ -142,24 +136,45 @@ const App = () => {
       })
   }
 
+  const logoutUser = () => {
+    window.localStorage.clear()  
+    setUser(null)                
+    setView('register')             
+  }
+
   if (view == 'register') {
-    return <Register onSubmit={registerUser} setView={setView}/>
+    return (
+      <div>
+        <h1>dartmouth breakpoint</h1>
+        <Register onSubmit={registerUser} setView={setView}/>
+      </div>
+    )
   }
 
   if (view == 'verify') {
-    return <Verify onSubmit={verifyUser} />
+    return (
+      <div>
+        <h1>dartmouth breakpoint</h1>
+        <Verify onSubmit={verifyUser} />
+      </div>
+    )
   }
 
   if (view == 'login') {
-    return <Login onSubmit={loginUser} />
+    return (
+      <div>
+        <h1>dartmouth breakpoint</h1>
+        <Login onSubmit={loginUser} />
+      </div>
+    )
   }
-
 
   return (
     <div>
-      <h1>breakpoint</h1>
+      <h1>dartmouth breakpoint</h1>
       <Posts AppList={apps} Issuelist={TotalIssues} onSubmit={addIssue}/>
       <SubmissionPortal onSubmit={addApp}/>
+      <button onClick={logoutUser}>logout</button>
     </div>
   )
 }
