@@ -58,7 +58,6 @@ app.use(express.json())
 app.use(requestLogger)
 
 
-
 // get all issues
 app.get('/api/issues', (request, response) => {
   IssueModel.find({}).then(result => {
@@ -112,6 +111,7 @@ app.post('/api/issues', authenticateToken, (request, response) => {
       AppModel.findById(body.appId)
         .then(app => {
           console.log("APP FOUND, SENDING EMAIL")
+          /* COMMENETED OUT EMAIL SENDING
           console.log(app.email)
           const mailerSend = new MailerSend({
             apiKey: process.env.MAILERSEND_API_KEY
@@ -135,7 +135,8 @@ app.post('/api/issues', authenticateToken, (request, response) => {
               console.log("EMAIL SEND FAILED")
               console.error(emailError)
               response.json(savedIssue)
-            })
+            })*/ 
+          response.json(savedIssue)
         })
         .catch(appError => {
           console.log("APP NOT FOUND")
@@ -149,6 +150,22 @@ app.post('/api/issues', authenticateToken, (request, response) => {
       response.status(500).json({ error: 'Failed to save issue' })
     })
 })
+
+// deleteIssue
+app.delete('/api/issues/:id', authenticateToken, async (request, response) => {
+  const id = request.params.id
+  const userEmail = request.user.email
+
+  const issue = await IssueModel.findById(id)
+  const app = await AppModel.findById(issue.appId)
+  if (app.email != userEmail) {
+    return response.status(403).json({error: "can only resolve issues for your own app"})
+  }
+
+  await IssueModel.findByIdAndDelete(id)
+  response.json({message: 'issue resolved'})
+})
+
 
 // postUser
 app.post('/api/register', async (request, response) => {  

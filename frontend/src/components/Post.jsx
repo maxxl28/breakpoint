@@ -1,4 +1,4 @@
-const Post = ({ App, Issues, onSubmit }) => {
+const Post = ({ App, Issues, onSubmit, onResolve }) => {
   
   return (
     <div>
@@ -14,7 +14,15 @@ const Post = ({ App, Issues, onSubmit }) => {
       <p>{App.github}</p>
       <p>Issues</p>      
       <ul>
-        {Issues.map(value => <li key={value.id}>{value.comment}</li>)}
+        {Issues.map(value => 
+          <div>
+            <li key={value.id}>{value.comment}</li>
+            <button onClick={(event) => {
+              event.preventDefault()
+              onResolve(event, value.id)
+            }}>resolve</button>
+          </div>
+        )}
       </ul>
 
       <p>Submit an Issue:</p>

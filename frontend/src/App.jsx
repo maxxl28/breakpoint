@@ -74,6 +74,20 @@ const App = () => {
     event.target.reset()
   }
 
+  const resolveIssue = (event, issueId) => {
+    event.preventDefault()
+    console.log("issue has attempted to be deleted")
+    postService
+      .deleteIssue(issueId)
+      .then(() => {
+        const newIssues = TotalIssues.filter(issue => issue.id !== issueId)
+        setTotalIssues(newIssues)
+      }).catch(error => {
+        const errorMessage = error.response.data.error
+        alert(errorMessage)
+      })
+  }
+
   const registerUser = (event) => {
     event.preventDefault()
     const name = event.target.elements.name.value
@@ -172,7 +186,7 @@ const App = () => {
   return (
     <div>
       <h1>dartmouth breakpoint</h1>
-      <Posts AppList={apps} Issuelist={TotalIssues} onSubmit={addIssue}/>
+      <Posts AppList={apps} Issuelist={TotalIssues} onSubmit={addIssue} onResolve={resolveIssue}/>
       <SubmissionPortal onSubmit={addApp}/>
       <button onClick={logoutUser}>logout</button>
     </div>
