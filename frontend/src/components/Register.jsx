@@ -1,4 +1,12 @@
+import { useState, useEffect } from 'react'
+
 const Register = ( {onSubmit, setView} ) => {
+  const [show, setShow] = useState(false)
+  
+    const toggleVisibility = () => {
+      setShow(!show)
+    }
+
   return (
     <div>
       <h2>Register</h2>
@@ -11,9 +19,9 @@ const Register = ( {onSubmit, setView} ) => {
         <p>Email</p>
         <input name="email" type="email" required/>
         <p>Password</p>
-        <input name="password" required/>
+        <input name="password" type={show ? 'text' : 'password'} required/>
+        <button type="button" onClick={toggleVisibility}>{show ? 'Hide' : 'Show'}</button>
         <button type="submit">submit</button>
-      {/*button to change to login*/}
       <div>
         <button onClick={() => setView('login')}>Go to login</button>
       </div>
