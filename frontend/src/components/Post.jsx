@@ -1,4 +1,4 @@
-const Post = ({ App, Issues, onSubmit, onResolve }) => {
+const Post = ({ App, Issues, onSubmit, onResolve, user }) => {
   
   return (
     <div>
@@ -24,15 +24,20 @@ const Post = ({ App, Issues, onSubmit, onResolve }) => {
           </div>
         )}
       </ul>
-
-      <p>Submit an Issue:</p>
-      <form onSubmit={(event) => {
-        event.preventDefault()
-        onSubmit(event, App.id)
-      }}>
-        <input name="issue"/>
-        <button type="submit">submit</button>
-      </form>
+      <div>
+        {user && (
+          <>
+            <p>Submit an Issue:</p>
+            <form onSubmit={(event) => {
+              event.preventDefault()
+              onSubmit(event, App.id)
+            }}>
+              <input name="issue"/>
+              <button type="submit">submit</button>
+            </form>
+          </>
+      )}
+      </div>
     </div>
 
   )

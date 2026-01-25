@@ -8,42 +8,38 @@ import Login from './components/Login'
 import Verify from './components/Verify'
 
 const App = () => {
+  // useStates
   const [apps, setApps] = useState([])
   const [TotalIssues, setTotalIssues] = useState([])  
   const [user, setUser] = useState(null) // ignore this for now
   const [view, setView] = useState('register')
   const [search, setSearch] = useState('')
-  
 
   useEffect(() => {
     postService
       .getAllApps()
       .then(response => {
-        console.log("tried to get apps")
         setApps(response)
       })
     postService
       .getAllIssues()
       .then(response => {
-        console.log("tried to get issues")
-        console.log(JSON.stringify(response, null, 2))
         setTotalIssues(response)
       })
   }, [view])
 
+  // handle searching of apps
   const handleSearchChange = (event) => {
     setSearch(event.target.value)
   }
 
+  // handle adding an app 
   const addApp = (event) => {
-    console.log("app has been attempted to be added")
     event.preventDefault()
     const name = event.target.elements.name.value
     const description = event.target.elements.description.value
     const github = event.target.elements.github.value
     const deployment = event.target.elements.deployment.value
-    const loggedUserJSON = window.localStorage.getItem('breakpointUser')
-    const user = JSON.parse(loggedUserJSON)  // ← Parse it first
     const email = user.email
     const newApp = {
       name: name,
@@ -62,10 +58,9 @@ const App = () => {
     event.target.reset()
   }
 
+  // handle adding an issue
   const addIssue = (event, appId) => {
     event.preventDefault()
-    console.log("issue has attempted to be logged")
-    console.log(event.target.elements.issue.value)
     const newIssue = {
       appId: appId,
       comment: event.target.elements.issue.value
@@ -79,9 +74,9 @@ const App = () => {
     event.target.reset()
   }
 
+  // handle resolving an issue
   const resolveIssue = (event, issueId) => {
     event.preventDefault()
-    console.log("issue has attempted to be deleted")
     postService
       .deleteIssue(issueId)
       .then(() => {
@@ -93,6 +88,7 @@ const App = () => {
       })
   }
 
+  // handle registration
   const registerUser = (event) => {
     event.preventDefault()
     const name = event.target.elements.name.value
@@ -106,7 +102,7 @@ const App = () => {
     authService
       .postRegistration(newUser)
       .then(response => {
-        alert('Registration successful! Check your email for verification code.')
+        alert('registration successful! check your email for verification code.')
         setView('verify')
       })
       .catch(error => {
@@ -116,6 +112,7 @@ const App = () => {
     event.target.reset()
   }
 
+  // handle user verification
   const verifyUser = (event) => {
     event.preventDefault()
     const token = event.target.elements.token.value
@@ -133,6 +130,7 @@ const App = () => {
       })
   }
 
+  // handle user login
   const loginUser = (event) => {
     event.preventDefault()
     const email = event.target.elements.email.value
@@ -155,12 +153,14 @@ const App = () => {
       })
   }
 
+  // handle user logout
   const logoutUser = () => {
     window.localStorage.clear()  
     setUser(null)                
     setView('register')             
   }
 
+  // handle user auth display
   if (view == 'register') {
     return (
       <div>
@@ -195,9 +195,12 @@ const App = () => {
         <p>search:</p>
         <input onChange={handleSearchChange} value={search}/>
       </div>
-      <h1>all apps:</h1>
-      <Posts AppList={apps.filter(app => app.name.toLowerCase().includes(search.toLowerCase()))} 
-        Issuelist={TotalIssues} onSubmit={addIssue} onResolve={resolveIssue}/>
+      <h1>buggy apps:</h1>
+      <Posts AppList={apps.filter(app => app.name.toLowerCase().includes(search.toLowerCase()) && app.email != user.email)} 
+        Issuelist={TotalIssues} onSubmit={addIssue} onResolve={resolveIssue} user={true}/>
+      <h1>your apps:</h1>
+      <Posts AppList={apps.filter(app => app.name.toLowerCase().includes(search.toLowerCase()) && app.email == user.email)} 
+        Issuelist={TotalIssues} onSubmit={addIssue} onResolve={resolveIssue} user={false}/>
       <SubmissionPortal onSubmit={addApp}/>
       <button onClick={logoutUser}>logout</button>
     </div>
