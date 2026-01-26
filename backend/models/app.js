@@ -1,11 +1,13 @@
+// schema for apps
+
 const mongoose = require('mongoose')
 
 const appSchema = new mongoose.Schema({
-  name: String,
-  description: String,
-  deployment: String,
-  github: String,
-  email: String,
+  name: String, // App name
+  description: String, // short description
+  deployment: String, // url
+  github: String, // repository
+  email: String, // email for notifications
 })
 
 appSchema.set('toJSON', {

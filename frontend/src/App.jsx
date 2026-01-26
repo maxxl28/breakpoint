@@ -1,3 +1,6 @@
+// Main React Component
+// Maintains a list of all apps, all issues, the user, the view, and a search query
+
 import Posts from './components/Posts'
 import SubmissionPortal from './components/SubmissionPortal'
 import { useState, useEffect } from 'react'
@@ -10,11 +13,12 @@ import Verify from './components/Verify'
 const App = () => {
   // useStates
   const [apps, setApps] = useState([])
-  const [TotalIssues, setTotalIssues] = useState([])  
-  const [user, setUser] = useState(null) // ignore this for now
+  const [totalIssues, setTotalIssues] = useState([])  
+  const [user, setUser] = useState(null) 
   const [view, setView] = useState('register')
   const [search, setSearch] = useState('')
 
+  // to fetch data on mount and on view change
   useEffect(() => {
     postService
       .getAllApps()
@@ -28,18 +32,18 @@ const App = () => {
       })
   }, [view])
 
-  // handle searching of apps
+  // Handle searching of apps
   const handleSearchChange = (event) => {
     setSearch(event.target.value)
   }
 
-  // handle adding an app 
+  // Handle adding an app 
   const addApp = (event) => {
     event.preventDefault()
     const name = event.target.elements.name.value
     const description = event.target.elements.description.value
     const github = event.target.elements.github.value
-    const deployment = event.target.elements.deployment.value
+    const deployment = event.target.elements.deployment.value || "n/a" 
     const email = user.email
     const newApp = {
       name: name,
@@ -58,7 +62,7 @@ const App = () => {
     event.target.reset()
   }
 
-  // handle adding an issue
+  // Handle adding an issue
   const addIssue = (event, appId) => {
     event.preventDefault()
     const newIssue = {
@@ -68,19 +72,19 @@ const App = () => {
     postService
       .postIssue(newIssue)
       .then(response => {
-        const newIssues = TotalIssues.concat(response)
+        const newIssues = totalIssues.concat(response)
         setTotalIssues(newIssues)
       })
     event.target.reset()
   }
 
-  // handle resolving an issue
+  // Handle resolving an issue
   const resolveIssue = (event, issueId) => {
     event.preventDefault()
     postService
       .deleteIssue(issueId)
       .then(() => {
-        const newIssues = TotalIssues.filter(issue => issue.id !== issueId)
+        const newIssues = totalIssues.filter(issue => issue.id !== issueId)
         setTotalIssues(newIssues)
       }).catch(error => {
         const errorMessage = error.response.data.error
@@ -88,7 +92,10 @@ const App = () => {
       })
   }
 
-  // handle registration
+  // Handle authentication
+
+
+  // Handle registration
   const registerUser = (event) => {
     event.preventDefault()
     const name = event.target.elements.name.value
@@ -112,7 +119,7 @@ const App = () => {
     event.target.reset()
   }
 
-  // handle user verification
+  // Handle user verification
   const verifyUser = (event) => {
     event.preventDefault()
     const token = event.target.elements.token.value
@@ -130,7 +137,7 @@ const App = () => {
       })
   }
 
-  // handle user login
+  // Handle user login
   const loginUser = (event) => {
     event.preventDefault()
     const email = event.target.elements.email.value
@@ -143,8 +150,8 @@ const App = () => {
       .postLogin(user)
       .then(response => {
         setView('full_view')
-        window.localStorage.setItem('breakpointToken', response.token)
-        window.localStorage.setItem('breakpointUser', JSON.stringify(response))
+        localStorage.setItem('breakpointToken', response.token)
+        localStorage.setItem('breakpointUser', JSON.stringify(response))
         setUser(response)
       })
       .catch(error => {
@@ -153,18 +160,18 @@ const App = () => {
       })
   }
 
-  // handle user logout
+  // Handle user logout
   const logoutUser = () => {
     window.localStorage.clear()  
     setUser(null)                
     setView('register')             
   }
 
-  // handle user auth display
+  // Handle user auth display
   if (view == 'register') {
     return (
       <div>
-        <h1>dartmouth breakpoint</h1>
+        <h1>Dartmouth Breakpoint</h1>
         <Register onSubmit={registerUser} setView={setView}/>
       </div>
     )
@@ -173,7 +180,7 @@ const App = () => {
   if (view == 'verify') {
     return (
       <div>
-        <h1>dartmouth breakpoint</h1>
+        <h1>Dartmouth Breakpoint</h1>
         <Verify onSubmit={verifyUser} />
       </div>
     )
@@ -182,7 +189,7 @@ const App = () => {
   if (view == 'login') {
     return (
       <div>
-        <h1>dartmouth breakpoint</h1>
+        <h1>Dartmouth Breakpoint</h1>
         <Login onSubmit={loginUser} />
       </div>
     )
@@ -190,17 +197,21 @@ const App = () => {
 
   return (
     <div>
-      <h1>dartmouth breakpoint</h1>
+      <h1>Dartmouth Breakpoint</h1>
+      {/*Search bar*/}
       <div>
-        <p>search:</p>
+        <p>Search:</p>
         <input onChange={handleSearchChange} value={search}/>
       </div>
-      <h1>buggy apps:</h1>
+      {/*Other apps*/}
+      <h1>Buggy apps:</h1>
       <Posts AppList={apps.filter(app => app.name.toLowerCase().includes(search.toLowerCase()) && app.email != user.email)} 
-        Issuelist={TotalIssues} onSubmit={addIssue} onResolve={resolveIssue} user={true}/>
-      <h1>your apps:</h1>
+        IssueList={totalIssues} onSubmit={addIssue} onResolve={resolveIssue} user={true}/>
+      {/*Your apps*/}
+      <h1>Your apps:</h1>
       <Posts AppList={apps.filter(app => app.name.toLowerCase().includes(search.toLowerCase()) && app.email == user.email)} 
-        Issuelist={TotalIssues} onSubmit={addIssue} onResolve={resolveIssue} user={false}/>
+        IssueList={totalIssues} onSubmit={addIssue} onResolve={resolveIssue} user={false}/>
+      {/*Add another app*/}
       <SubmissionPortal onSubmit={addApp}/>
       <button onClick={logoutUser}>logout</button>
     </div>

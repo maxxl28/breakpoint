@@ -1,11 +1,13 @@
+// schema for issues
+
 const mongoose = require('mongoose')
 
 const issueSchema = new mongoose.Schema({
   appId: {
    type: mongoose.Schema.Types.ObjectId,
    ref: 'App'
-  },
-  comment: String,
+  }, // reference to app
+  comment: String, // bug report text
 })
 
 issueSchema.set('toJSON', {

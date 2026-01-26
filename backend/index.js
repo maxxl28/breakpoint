@@ -1,3 +1,6 @@
+// Server file that handles all api routes and MailerSend for email notifications
+// Handles user auth, and CRUD operations for App, Issue
+
 require('dotenv').config()
 const { MailerSend, EmailParams, Sender, Recipient } = require("mailersend")
 const jwt = require('jsonwebtoken')
@@ -15,14 +18,7 @@ const AppModel = require('./models/app')
 const IssueModel = require('./models/issue')
 const UserModel = require('./models/user')
 
-// logs requests to console (from fullstackopen course)
-const requestLogger = (request, response, next) => {
-  console.log('Method:', request.method)
-  console.log('Path:  ', request.path)
-  console.log('Body:  ', request.body)
-  console.log('---')
-  next()
-}
+// Middleware: validate JWT and attach a user to request
 
 const getTokenFrom = request => {
   const authorization = request.get('authorization')
@@ -37,10 +33,8 @@ const authenticateToken = async (request, response, next) => {
   if (!token) {
     return response.status(401).json({ error: 'Token missing' })
   }
-
   try {
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET)
-
     const user = await UserModel.findById(decodedToken.id)
     if (!user) {
       return response.status(401).json({ error: 'User no longer exists' })
@@ -55,24 +49,24 @@ const authenticateToken = async (request, response, next) => {
 
 app.use(cors())
 app.use(express.json())
-app.use(requestLogger)
 
+// Public Routes
 
-// get all issues
+// Get all issues
 app.get('/api/issues', (request, response) => {
   IssueModel.find({}).then(result => {
     response.json(result)
   })
 })
   
-// get all apps
+// Get all apps
 app.get('/api/apps', (request, response) => {
   AppModel.find({}).then(result => {
     response.json(result)
   })
 })
 
-// get app by id
+// Get app by id
 app.get('/api/apps/:id', (request, response) => {
   const id = request.params.id
   AppModel.findById(id).then(app => {
@@ -80,7 +74,9 @@ app.get('/api/apps/:id', (request, response) => {
   })
 })
 
-// post app
+// Protected Routes (require authentication)
+
+// Create app
 app.post('/api/apps', authenticateToken, (request, response) => {
   
   const body = request.body
@@ -96,23 +92,18 @@ app.post('/api/apps', authenticateToken, (request, response) => {
   })
 })
 
-// postIssue
+// Create Issue
 app.post('/api/issues', authenticateToken, (request, response) => {
   const body = request.body
   const issue = new IssueModel({
     appId: body.appId,
     comment: body.comment
   })
-  console.log(issue)
   issue.save()
     .then((savedIssue) => {
-      console.log("ISSUE SAVED TO DATABASE")
-      console.log("ASFASF")
+      // Find the app to get developer's email
       AppModel.findById(body.appId)
         .then(app => {
-          console.log("APP FOUND, SENDING EMAIL")
-          /* COMMENETED OUT EMAIL SENDING
-          console.log(app.email)
           const mailerSend = new MailerSend({
             apiKey: process.env.MAILERSEND_API_KEY
           })
@@ -123,35 +114,31 @@ app.post('/api/issues', authenticateToken, (request, response) => {
             .setFrom(sentFrom)
             .setTo(recipients)
             .setReplyTo(sentFrom)
-            .setSubject("Subject: new issue")
+            .setSubject("New issue in your app!")
             .setText("Someone posted a new issue!")
 
           mailerSend.email.send(emailParams)
             .then(() => {
-              console.log("EMAIL SENT SUCCESSFULLY")
               response.json(savedIssue)
             })
             .catch(emailError => {
-              console.log("EMAIL SEND FAILED")
               console.error(emailError)
-              response.json(savedIssue)
-            })*/ 
+              response.json(savedIssue) // Still return issue even if email fails
+            })
           response.json(savedIssue)
         })
         .catch(appError => {
-          console.log("APP NOT FOUND")
           console.error(appError)
           response.status(404).json({ error: 'App not found' })
         })
     })
     .catch(saveError => {
-      console.log("ISSUE SAVE FAILED")
       console.error(saveError)
       response.status(500).json({ error: 'Failed to save issue' })
     })
 })
 
-// deleteIssue
+// Delete issue 
 app.delete('/api/issues/:id', authenticateToken, async (request, response) => {
   const id = request.params.id
   const userEmail = request.user.email
@@ -159,15 +146,16 @@ app.delete('/api/issues/:id', authenticateToken, async (request, response) => {
   const issue = await IssueModel.findById(id)
   const app = await AppModel.findById(issue.appId)
   if (app.email != userEmail) {
-    return response.status(403).json({error: "can only resolve issues for your own app"})
+    return response.status(403).json({ error: 'Can only resolve issues for your own app' })
   }
 
   await IssueModel.findByIdAndDelete(id)
-  response.json({message: 'issue resolved'})
+    response.json({message: 'Issue resolved'})
 })
 
+// Authenticate User Routes
 
-// postUser
+// Register User
 app.post('/api/register', async (request, response) => {  
   const body = request.body
   const name = body.name
@@ -176,14 +164,13 @@ app.post('/api/register', async (request, response) => {
   const userExists = await UserModel.findOne({email: email})  
   
   if (userExists) {
-    return response.status(400).json({error: "user already exists"})
+    return response.status(400).json({ error: "User already exists" })
   }
 
-  /* left out for testing purposes
   if (!email.endsWith("@dartmouth.edu")) {
-    return response.status(400).json({error: "need dartmouth edu email"})
+    return response.status(400).json({ error: "Need a dartmouth edu email" })
   }
-  */
+  
   const saltRounds = 10
   const passwordHash = await bcrypt.hash(password, saltRounds)
   const verificationToken = crypto.randomBytes(4).toString('hex')
@@ -194,7 +181,6 @@ app.post('/api/register', async (request, response) => {
     verified: false,
     verificationToken: verificationToken,
   })
-  console.log("NEW USER HAS BEEN CREATED, SENDING TO MONGO DB...")
   user.save().then(user => {
     const mailerSend = new MailerSend({
         apiKey: process.env.MAILERSEND_API_KEY
@@ -207,11 +193,10 @@ app.post('/api/register', async (request, response) => {
     .setFrom(sentFrom)
     .setTo(recipients)
     .setReplyTo(sentFrom)
-    .setSubject("Subject: new token")
-    .setText(`Your verification code is ${verificationToken}`)
+    .setSubject("Subject: new token for registration")
+    .setText(`Your verification code is ${verificationToken}.`)
 
     mailerSend.email.send(emailParams).then(email => {
-      console.log("I RAN AND EMAIL ALERT SENT")
       response.json(email)
     })
     .catch(error => {
@@ -223,6 +208,7 @@ app.post('/api/register', async (request, response) => {
   })
 })
   
+// Verify Token
 app.post('/api/verify', async (request, response) => {
   const body = request.body  
   const token = body.token
@@ -239,6 +225,7 @@ app.post('/api/verify', async (request, response) => {
   response.json({ message: 'Account verified'})
 })
 
+// User login 
 app.post('/api/login', async (request, response) => {
   const body = request.body
   const email = body.email
@@ -265,7 +252,7 @@ app.post('/api/login', async (request, response) => {
   })
 })
 
-
+// start server
 const PORT = 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)

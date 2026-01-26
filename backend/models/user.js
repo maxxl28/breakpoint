@@ -1,11 +1,13 @@
+// schema for users
+
 const mongoose = require('mongoose')
 
 const userSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  passwordHash: String,
-  verified: Boolean,
-  verificationToken: String
+  name: String, // User's name
+  email: String, // Dartmouth address
+  passwordHash: String, // hashed passwird
+  verified: Boolean, // check verification
+  verificationToken: String // Random token sent for verification
 })
 
 userSchema.set('toJSON', {

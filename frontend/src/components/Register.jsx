@@ -1,3 +1,5 @@
+// Register Component
+
 import { useState } from 'react'
 
 const Register = ( {onSubmit, setView} ) => {
@@ -20,7 +22,7 @@ const Register = ( {onSubmit, setView} ) => {
         <input name="email" type="email" required/>
         <p>Password</p>
         <input name="password" type={show ? 'text' : 'password'} required/>
-        <button type="button" onClick={toggleVisibility}>{show ? 'Hide' : 'Show'}</button>
+        <button type="button" onClick={toggleVisibility}>{show ? 'hide password' : 'show password'}</button>
         <button type="submit">submit</button>
       <div>
         <button onClick={() => setView('login')}>Go to login</button>
