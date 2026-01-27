@@ -18,13 +18,6 @@ const AppModel = require('./models/app')
 const IssueModel = require('./models/issue')
 const UserModel = require('./models/user')
 
-const requestLogger = (request, response, next) => {
-  console.log('Method:', request.method)
-  console.log('Path:  ', request.path)
-  console.log('Body:  ', request.body)
-  console.log('---')
-  next()
-}
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -65,7 +58,7 @@ const authenticateToken = async (request, response, next) => {
 
 app.use(cors())
 app.use(express.json())
-app.use(requestLogger)
+app.use(express.static('dist'))
 // Public Routes
 
 // Get all issues
@@ -110,7 +103,6 @@ app.post('/api/apps', authenticateToken, (request, response) => {
 
 
 app.post('/api/issues', authenticateToken, (request, response) => {
-  console.log("api/issues called")
   const body = request.body
   const issue = new IssueModel({
     appId: body.appId,
@@ -128,17 +120,14 @@ app.post('/api/issues', authenticateToken, (request, response) => {
           }
           transporter.sendMail(mailOptions)
             .then(() => {
-              console.log("EMAIL SENT")
               response.json(savedIssue)
             })
             .catch(emailError => {
-              console.log(emailError)
               response.json(savedIssue) // Still return issue even if email fails
             })
         })
     })
     .catch(error => {
-      console.log(error)
       response.status(500).json({ error: error })
     })
 })
@@ -172,11 +161,11 @@ app.post('/api/register', async (request, response) => {
     return response.status(400).json({error: "user already exists"})
   }
 
-  /* left out for testing purposes
+  
   if (!email.endsWith("@dartmouth.edu")) {
     return response.status(400).json({error: "need dartmouth edu email"})
   }
-  */
+  
   const saltRounds = 10
   const passwordHash = await bcrypt.hash(password, saltRounds)
   const verificationToken = crypto.randomBytes(4).toString('hex')
@@ -187,7 +176,6 @@ app.post('/api/register', async (request, response) => {
     verified: false,
     verificationToken: verificationToken,
   })
-  console.log("NEW USER HAS BEEN CREATED, SENDING TO MONGO DB...")
   user.save().then(() => {
     const mailOptions = {
       from: process.env.GMAIL_USER,
@@ -197,12 +185,10 @@ app.post('/api/register', async (request, response) => {
     }
     transporter.sendMail(mailOptions)
       .then(() => {
-        console.log("EMAIL SENT")
         response.json({ message: 'Registration successful! Check your email.' })
       })
   })
   .catch(error => {
-    console.log(error)
     response.status(500).json({ error: error })
   })
 })

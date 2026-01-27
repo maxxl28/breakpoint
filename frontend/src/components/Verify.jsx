@@ -10,7 +10,7 @@ const Verify = ( {onSubmit} ) => {
       }}>
         <p>Type in your verification code:</p>
         <input name="token" required/>
-        <button type="submit">submit</button>
+        <button type="submit">Submit</button>
       </form>
     </div>
   )

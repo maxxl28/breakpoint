@@ -1,7 +1,7 @@
 // service layer for authentication calls
 
 import axios from 'axios'
-const baseUrl='http://localhost:3001/api'
+const baseUrl='/api'
 
 const postRegistration = (newUser) => {
   const request = axios.post(`${baseUrl}/register`, newUser)
