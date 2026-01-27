@@ -132,11 +132,13 @@ Yes.
 
 ### Specific Examples
 
-I asked AI to generate CSS (not present on this version).
+I asked AI to generate CSS.
 
 Prompt:
 
 Can you make me one css file for the entire app? Make it modern, with dark green as the primary color. Do not over clutter, it just needs to be slightly responsive.
 
 
-I also asked AI to try and debug my email error (unfortunately I do not have the prompt/chat). I also us
+I also asked AI to try and debug my email error (unfortunately I do not have the prompt/chat). I also used it as a reference for documentation, and sometimes would ask it for architectural decisions (for example, whether or not I should split a component up in the frontend).
+
+
