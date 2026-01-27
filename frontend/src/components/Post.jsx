@@ -27,7 +27,7 @@ const Post = ({ App, Issues, onSubmit, onResolve, user }) => {
                   onClick={(event) => {
                     event.preventDefault()
                     onResolve(event, value.id)
-                  }}>resolve</button>
+                  }}>Resolve</button>
               )}
             </div>
           ))}   
@@ -42,7 +42,7 @@ const Post = ({ App, Issues, onSubmit, onResolve, user }) => {
               onSubmit(event, App.id)
             }}>
               <input name="issue"/>
-              <button type="submit">submit</button>
+              <button type="submit">Submit</button>
             </form>
           </>
       )}

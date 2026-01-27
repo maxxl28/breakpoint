@@ -172,6 +172,7 @@ const App = () => {
     return (
       <div>
         <h1>Dartmouth Breakpoint</h1>
+        <h3>Social Debugging for Dartmouth Students</h3>
         <Register onSubmit={registerUser} setView={setView}/>
       </div>
     )
@@ -181,6 +182,7 @@ const App = () => {
     return (
       <div>
         <h1>Dartmouth Breakpoint</h1>
+        <h3>Social Debugging for Dartmouth Students</h3>
         <Verify onSubmit={verifyUser} />
       </div>
     )
@@ -190,6 +192,7 @@ const App = () => {
     return (
       <div>
         <h1>Dartmouth Breakpoint</h1>
+        <h3>Social Debugging for Dartmouth Students</h3>
         <Login onSubmit={loginUser} />
       </div>
     )
@@ -198,6 +201,7 @@ const App = () => {
   return (
     <div>
       <h1>Dartmouth Breakpoint</h1>
+      <h3>Social Debugging for Dartmouth Students</h3>
       {/*Search bar*/}
       <div>
         <p>Search for apps:</p>
@@ -213,7 +217,7 @@ const App = () => {
         IssueList={totalIssues} onSubmit={addIssue} onResolve={resolveIssue} user={false}/>
       {/*Add another app*/}
       <SubmissionPortal onSubmit={addApp}/>
-      <button onClick={logoutUser}>logout</button>
+      <button onClick={logoutUser}>Logout</button>
     </div>
   )
 }

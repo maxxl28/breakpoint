@@ -22,8 +22,8 @@ const Register = ( {onSubmit, setView} ) => {
         <input name="email" type="email" required/>
         <p>Password</p>
         <input name="password" type={show ? 'text' : 'password'} required/>
-        <button type="button" onClick={toggleVisibility}>{show ? 'hide password' : 'show password'}</button>
-        <button type="submit">submit</button>
+        <button type="button" onClick={toggleVisibility}>{show ? 'Hide Password' : 'Show Password'}</button>
+        <button type="submit">Submit</button>
       <div>
         <button onClick={() => setView('login')}>go to login</button>
       </div>
