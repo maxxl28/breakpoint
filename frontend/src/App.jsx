@@ -200,7 +200,7 @@ const App = () => {
       <h1>Dartmouth Breakpoint</h1>
       {/*Search bar*/}
       <div>
-        <p>Search:</p>
+        <p>Search for apps:</p>
         <input onChange={handleSearchChange} value={search}/>
       </div>
       {/*Other apps*/}
