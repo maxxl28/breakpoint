@@ -12,7 +12,7 @@ const SubmissionPortal = ({ onSubmit }) => {
         <input name="description" type="text" placeholder="enter app description" required/>
 
         <p>Deployment:</p>
-        <input name="deployment" type="text" placeholder="enter deployment url"/>
+        <input name="deployment" type="text" placeholder="if applicable, enter deployment url"/>
 
         <p>Github:</p>
         <input name="github" type="text" placeholder="enter GitHub gist or repo url" required/>

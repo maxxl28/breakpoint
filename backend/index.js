@@ -2,7 +2,7 @@
 // Handles user auth, and CRUD operations for App, Issue
 
 require('dotenv').config()
-const { MailerSend, EmailParams, Sender, Recipient } = require("mailersend")
+const nodemailer = require('nodemailer')
 const jwt = require('jsonwebtoken')
 const mongoose = require('mongoose')
 const crypto = require('crypto')
@@ -17,6 +17,22 @@ mongoose.connect(url, { family: 4 })
 const AppModel = require('./models/app')
 const IssueModel = require('./models/issue')
 const UserModel = require('./models/user')
+
+const requestLogger = (request, response, next) => {
+  console.log('Method:', request.method)
+  console.log('Path:  ', request.path)
+  console.log('Body:  ', request.body)
+  console.log('---')
+  next()
+}
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD
+  }
+})
 
 // Middleware: validate JWT and attach a user to request
 
@@ -49,7 +65,7 @@ const authenticateToken = async (request, response, next) => {
 
 app.use(cors())
 app.use(express.json())
-
+app.use(requestLogger)
 // Public Routes
 
 // Get all issues
@@ -92,8 +108,9 @@ app.post('/api/apps', authenticateToken, (request, response) => {
   })
 })
 
-// Create Issue
+
 app.post('/api/issues', authenticateToken, (request, response) => {
+  console.log("api/issues called")
   const body = request.body
   const issue = new IssueModel({
     appId: body.appId,
@@ -101,40 +118,28 @@ app.post('/api/issues', authenticateToken, (request, response) => {
   })
   issue.save()
     .then((savedIssue) => {
-      // Find the app to get developer's email
       AppModel.findById(body.appId)
         .then(app => {
-          const mailerSend = new MailerSend({
-            apiKey: process.env.MAILERSEND_API_KEY
-          })
-          const sentFrom = new Sender("noreply@test-q3enl6k0ndm42vwr.mlsender.net", "breakpoint")
-          const recipients = [new Recipient(app.email, "Developer")]
-          
-          const emailParams = new EmailParams()
-            .setFrom(sentFrom)
-            .setTo(recipients)
-            .setReplyTo(sentFrom)
-            .setSubject("New issue in your app!")
-            .setText("Someone posted a new issue!")
-
-          mailerSend.email.send(emailParams)
+          const mailOptions = {
+            from: process.env.GMAIL_USER,
+            to: app.email,
+            subject: 'New issue reported on your Breakpoint app!',
+            text: `Someone reported a new issue on "${app.name}"`
+          }
+          transporter.sendMail(mailOptions)
             .then(() => {
+              console.log("EMAIL SENT")
               response.json(savedIssue)
             })
             .catch(emailError => {
-              console.error(emailError)
+              console.log(emailError)
               response.json(savedIssue) // Still return issue even if email fails
             })
-          response.json(savedIssue)
-        })
-        .catch(appError => {
-          console.error(appError)
-          response.status(404).json({ error: 'App not found' })
         })
     })
-    .catch(saveError => {
-      console.error(saveError)
-      response.status(500).json({ error: 'Failed to save issue' })
+    .catch(error => {
+      console.log(error)
+      response.status(500).json({ error: error })
     })
 })
 
@@ -164,13 +169,14 @@ app.post('/api/register', async (request, response) => {
   const userExists = await UserModel.findOne({email: email})  
   
   if (userExists) {
-    return response.status(400).json({ error: "User already exists" })
+    return response.status(400).json({error: "user already exists"})
   }
 
+  /* left out for testing purposes
   if (!email.endsWith("@dartmouth.edu")) {
-    return response.status(400).json({ error: "Need a dartmouth edu email" })
+    return response.status(400).json({error: "need dartmouth edu email"})
   }
-  
+  */
   const saltRounds = 10
   const passwordHash = await bcrypt.hash(password, saltRounds)
   const verificationToken = crypto.randomBytes(4).toString('hex')
@@ -181,30 +187,23 @@ app.post('/api/register', async (request, response) => {
     verified: false,
     verificationToken: verificationToken,
   })
-  user.save().then(user => {
-    const mailerSend = new MailerSend({
-        apiKey: process.env.MAILERSEND_API_KEY
+  console.log("NEW USER HAS BEEN CREATED, SENDING TO MONGO DB...")
+  user.save().then(() => {
+    const mailOptions = {
+      from: process.env.GMAIL_USER,
+      to: email,
+      subject: 'Verify your Breakpoint account',
+      text: `Your verification code is ${verificationToken}`
+    }
+    transporter.sendMail(mailOptions)
+      .then(() => {
+        console.log("EMAIL SENT")
+        response.json({ message: 'Registration successful! Check your email.' })
       })
-    const sentFrom = new Sender("noreply@test-q3enl6k0ndm42vwr.mlsender.net", "breakpoint")
-    const recipients = [
-      new Recipient(email, "Developer")
-    ]
-    const emailParams = new EmailParams()
-    .setFrom(sentFrom)
-    .setTo(recipients)
-    .setReplyTo(sentFrom)
-    .setSubject("Subject: new token for registration")
-    .setText(`Your verification code is ${verificationToken}.`)
-
-    mailerSend.email.send(emailParams).then(email => {
-      response.json(email)
-    })
-    .catch(error => {
-      response.status(500).json({error: error})
-    })
   })
   .catch(error => {
-    response.status(500).json({error: error})
+    console.log(error)
+    response.status(500).json({ error: error })
   })
 })
   
@@ -253,7 +252,7 @@ app.post('/api/login', async (request, response) => {
 })
 
 // start server
-const PORT = 3001
+const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
